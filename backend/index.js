@@ -5,6 +5,8 @@ const fs = require('fs')
 const app = express()
 const port = 3000
 
+app.use(express.json())
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '/../frontend/index.html'))
 })
@@ -25,7 +27,7 @@ app.get('/data', (req, res) => {
 })
 
 app.get('/data/:id', (req, res) => {
-  console.log(req.params)
+  // console.log(req.params)
   const searchId = Number(req.params.id)
 
   if (isNaN(searchId)) {
@@ -48,6 +50,39 @@ app.get('/data/:id', (req, res) => {
     }
   })
 })
+
+app.post('/data', (req, res) => {
+
+  fs.readFile(`${__dirname}/data.json`, (err, data) => {
+    if (err) {
+      console.log("error at reading the file", err)
+      res.status(500).json("error at reading the file")
+    } else {
+      const jsonData = JSON.parse(data)
+
+      const existingUser = jsonData.find(user => user.id === req.body.id)
+
+      if (existingUser) {
+        return res.status(400).json(`User with id ${req.body.id} already exists`)
+      }
+
+      jsonData.push(req.body)
+
+      fs.writeFile(`${__dirname}/data.json`, JSON.stringify(jsonData, null, 2), (err) => {
+        if (err) {
+          console.log("error at writing the file", err)
+          res.status(500).json("error at writing the file")
+        } else {
+          res.json(`successfully added user with id ${req.body.id}`);
+        }
+      })
+    }
+  })
+
+  // res.json("response");
+})
+
+
 
 
 app.listen(port, () => {
